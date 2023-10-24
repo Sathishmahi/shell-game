@@ -1,0 +1,1 @@
+streamlit run artifact/ai_vs_human/temp.py --server.port 8501 & npx localtunnel -p 8501
