@@ -161,3 +161,5 @@ cython_debug/
 
 #### CUSTOM IGNORE
 artifact/
+node_modules/
+*.json

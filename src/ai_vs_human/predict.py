@@ -14,8 +14,30 @@ class Track:
     def __init__(self,):
         self.config_content = read_yaml()
         self.cpt_1 = CenterPointTracker()
+        self.all_rect_points = [(77,78,236,292),(240,79,399,293),(405,79,591,292)]
+        # self.rect_colors = {1:(173, 216, 230),0: (255, 182, 193)}
+        self.rect_colors = {1:(0, 255, 0),0: (0, 0, 255)}
+        self.solid_rect_colors = {1:(0, 255, 0),0: (0, 0, 255)}
 
-    def writer(self,input_file_path:str, output_file_path:str):
+    def input_video_display(self,input_file_path:str,input_display_file_path:str):
+        
+        cap = cv2.VideoCapture(input_file_path)
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        writer = cv2.VideoWriter(input_display_file_path,fourcc,30,
+                                (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                                int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))))
+
+        for i in range(int(cap.get(cv2.CAP_PROP_FRAME_COUNT))):
+            suc,frame = cap.read()
+            for idx,p in enumerate(self.all_rect_points,start=1):
+                x1,y1,x2,y2 = p
+                cv2.rectangle(frame,(x1,y1),(x2,y2),(0,0,0),1)
+                cv2.putText(frame,str(idx),(x1,y1-20),cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,0,0),2)
+            writer.write(frame)
+        writer.release()
+        cap.release()
+
+    def writer(self,input_file_path:str, output_file_path:str,user_prediction:int):
 
         self.cpt = CenterPointTracker()
         self.first_frame =  True
@@ -30,7 +52,7 @@ class Track:
         self.first_frame=True
         for c in tqdm(range(self.fc)):
             suc,frame = cap.read()
-            frame=self.process(frame,c)
+            frame=self.process(frame,c,user_prediction)
             writer.write(frame)
         cap.release()
         writer.release()
@@ -73,7 +95,20 @@ class Track:
         correct_id = self.ball_cup_id(ids,bboxes,ball_bbox)[1]
         return correct_id==predicted_id
 
-    def process(self,frame:np.ndarray,c)->np.ndarray:
+    def fill_color_zone(self,ball_id_bboox=None,all_zone_coor=None,user_prediction=None):
+        # if user_prediction:
+        #     return
+        # bx1,by1,bx2,by2 = ball_id_bboox
+        # p1 = (bx1+by1)/2, (bx2+by2)/2
+        # final_list = []
+        # for p in all_zone_coor:
+        #     x1,y1,x2,y2 = p
+        #     p2 = (x1+y1)/2, (x2+y2)/2
+        #     dist = self.cpt_1.eul_dist(p1, p2)
+        pass
+
+
+    def process(self,frame:np.ndarray,c,user_prediction)->np.ndarray:
 
         # first_frame =  True
         # ball_id = None
@@ -116,21 +151,40 @@ class Track:
                     if self.c_30:
                         print(f" last prediction id {ball_id_}")
                         # user_prediction = int(input("ENTER YOUR PREDICTION : "))
-                        self.user_prediction = 1
+                        self.user_prediction = user_prediction
                         self.user_right_or_wrong = self.right_or_wrong(self.user_prediction,all_ids,all_bboxes,(x1,y1,x2,y2))
+                        
                         self.ai_right_or_wrong = self.ball_id==ball_id_
                         self.c_30 = False
-                    cv2.putText(frame,f"# USER POINT {int(self.user_right_or_wrong)}",(40,40),cv2.FONT_HERSHEY_COMPLEX,0.5,(255,0,0),2)
-                    cv2.putText(frame,f"# AI POINT {int(self.ai_right_or_wrong)}",(40,70),cv2.FONT_HERSHEY_COMPLEX,0.5,(0,0,255),2)
-                    u_x1,u_y1,u_x2,u_y2 = all_bboxes[all_ids.index(self.user_prediction)]
+                    cv2.putText(frame,f"# USER POINT {int(self.user_right_or_wrong)}",(40,40),cv2.FONT_HERSHEY_COMPLEX,0.5,self.solid_rect_colors[self.user_right_or_wrong],2)
+                    cv2.putText(frame,f"# AI POINT {int(self.ai_right_or_wrong)}",(40,70),cv2.FONT_HERSHEY_COMPLEX,0.5,self.solid_rect_colors[self.ai_right_or_wrong],2)
+                    # u_x1,u_y1,u_x2,u_y2 = all_bboxes[all_ids.index(self.user_prediction)]
+                    u_x1,u_y1,u_x2,u_y2 = self.all_rect_points[user_prediction]
                     ai_x1,ai_y1,ai_x2,ai_y2 = all_bboxes[all_ids.index(self.ball_id)]
-                    cv2.rectangle( frame , (u_x1-15,u_y1-10), (u_x2+15,u_y2+10) , (255,0,0),2 )
-                    cv2.rectangle( frame , (ai_x1-15,ai_y1-10), (ai_x2+15,ai_y2+10) , (0,0,255),2 )
+                    frame = self.fill_color( (ai_x1,ai_y1,ai_x2,ai_y2),self.ai_right_or_wrong,frame )
+                    frame = self.fill_color( (u_x1,u_y1,u_x2,u_y2),self.user_right_or_wrong,frame )
+                    # cv2.rectangle( frame , (u_x1-15,u_y1-10), (u_x2+15,u_y2+10) , (255,0,0),2 )
+                    # cv2.rectangle( frame , (ai_x1-15,ai_y1-10), (ai_x2+15,ai_y2+10) , (0,0,255),2 )
 
             return frame
 
-    
-    def combine_all(self):
+    rect_color = {"user": (173, 216, 230), "ai": (144, 238, 144)}
+
+    def fill_color(self,coor, right_or_wrong, frame):
+        x1, y1, x2, y2 = coor
+        sub_img = frame[y1:y2, x1:x2]
+
+        # Create an image with the same shape as sub_img filled with the specified color
+        rc = np.zeros_like(sub_img)
+        rc[:, :] = self.rect_color.get(right_or_wrong, (255, 255, 255))
+
+        res = cv2.addWeighted(sub_img, 0.6, rc, 0.5, 1.0)
+
+        # Putting the image back to its position
+        frame[y1:y2, x1:x2] = res
+
+        return frame
+    def combine_all(self,user_prediction:int):
 
         artifact_con = self.config_content.get("artifact")
         artifact_root_dir =  artifact_con.get("root_dir")
@@ -165,15 +219,12 @@ class Track:
 
         self.w_h_fps_fc_initializer(input_file_path)
 
-        self.writer(input_file_path,output_file_path)
-
-
+        self.writer(input_file_path,output_file_path,user_prediction)
 
 
 if __name__ == "__main__":
     track = Track()
-    track.combine_all()
-
+    track.combine_all(1)
         
         
         
