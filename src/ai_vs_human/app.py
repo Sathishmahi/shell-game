@@ -24,17 +24,32 @@ out_display_file_path = os.path.join(ai_vs_human_root_dir,ai_vs_human_con.get("o
 
 import subprocess
 
-
+# track.input_video_display(input_file_path, input_file_path)
 def convert_video(input_video,output_video):
-    command = f"ffmpeg -i {input_video} -vcodec libx264 {output_video}"
-    try:
-        subprocess.run(command, shell=True, check=True)
-        print("Video conversion completed successfully.")
-    except subprocess.CalledProcessError as e:
-        print(f"Video conversion failed with error: {e}")
+    if not os.path.exists(output_video):
+        command = f"ffmpeg -i {input_video} -vcodec libx264 {output_video}"
+        try:
+            subprocess.run(command, shell=True, check=True)
+            print("Video conversion completed successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"Video conversion failed with error: {e}")
+    else:print(f"OUTPUT FOUND : {output_video}")
 
+import cv2
+cap = cv2.VideoCapture(input_file_path)
+print(f"VIDEO FRAME COUNT : {int(cap.get(cv2.CAP_PROP_FRAME_COUNT))} ")
+cap.release()
 convert_video(input_file_path, input_display_file_path)
 
+# command = f"ffmpeg -i {input_file_path} -vcodec libx264 {input_display_file_path}"
+# try:
+#     subprocess.run(command, shell=True, check=True)
+#     print("Video conversion completed successfully.")
+# except subprocess.CalledProcessError as e:
+#     print(f"Video conversion failed with error: {e}")
+# cap = cv2.VideoCapture(input_file_path)
+# print(f"AFTER VIDEO FRAME COUNT : {int(cap.get(cv2.CAP_PROP_FRAME_COUNT))} ")
+# cap.release()
 if os.path.exists(input_display_file_path):
 
     st.title("Shell Game AI vs Human")
@@ -49,7 +64,7 @@ if os.path.exists(input_display_file_path):
 
     if zone_id:
         win_txt = track.combine_all(int(zone_id))
-        for win in win_txt:
+        for win in list(set(win_txt)):
             txt = f"{win} 😃" if "Win" in win else f"{win} 😢"
             st.write(txt)
 
@@ -57,5 +72,12 @@ if os.path.exists(input_display_file_path):
 
         convert_video(out_file_path, out_display_file_path)
 
-        st.video(out_display_file_path)
+        # command = f"ffmpeg -i {out_file_path} -vcodec libx264 {out_display_file_path}"
+        # try:
+        #     subprocess.run(command, shell=True, check=True)
+        #     print("Video conversion completed successfully.")
+        # except subprocess.CalledProcessError as e:
+        #     print(f"Video conversion failed with error: {e}")
+
+        st.video(out_display_file_path )
     

@@ -34,6 +34,7 @@ class Track:
         writer = cv2.VideoWriter(input_display_file_path,fourcc,30,
                                 (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
                                 int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))))
+        print(f"FC {int(cap.get(cv2.CAP_PROP_FRAME_COUNT))}")
         for i in range(int(cap.get(cv2.CAP_PROP_FRAME_COUNT))):
             suc,frame = cap.read()
             frame = self._helper_zone_darw(frame)
@@ -127,7 +128,7 @@ class Track:
         
 
 
-    def process(self,frame:np.ndarray,c,user_prediction,put_track_id = False ,draw_zone = False)->np.ndarray:
+    def process(self,frame:np.ndarray,c,user_prediction,put_track_id = True ,draw_zone = True)->np.ndarray:
 
         # first_frame =  True
         # ball_id = None
@@ -155,7 +156,7 @@ class Track:
                 for id,bb in zip(all_ids,all_bboxes):
                     org_p = bb[:2]
                     # org_p = bb["bbox"][:2]
-                    if put_track_id:cv2.putText( frame,f"# {id}",(org_p[0],org_p[1]-20),cv2.FONT_HERSHEY_COMPLEX,0.6,(255,0,0),2  )
+                    if put_track_id:cv2.putText( frame,f"# {id}",(org_p[0],org_p[1]-10),cv2.FONT_HERSHEY_COMPLEX,0.4,(255,0,0),1  )
 
             if len(ball_result[0].boxes.data)==1 and  len(c_points)==3:
                 # print(ball_result[0].boxes.data)
@@ -252,8 +253,10 @@ class Track:
 
 
 if __name__ == "__main__":
+    from app import convert_video
     track = Track()
     track.combine_all(3)
+    convert_video("artifact/ai_vs_human/input_video_1.mp4","input_demo.mp4")
         
         
         
