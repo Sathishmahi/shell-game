@@ -6,15 +6,25 @@ import cv2
 import numpy as np
 import gdown as gd
 from tqdm import tqdm
+import subprocess
 
-
+def convert_video(input_video,output_video):
+    print(output_video)
+    if not os.path.exists(output_video):
+        command = f"ffmpeg -i {input_video} -vcodec libx264 {output_video}"
+        try:
+            subprocess.run(command, shell=True, check=True)
+            print("Video conversion completed successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"Video conversion failed with error: {e}")
+    else:print(f"OUTPUT FOUND : {output_video}")
 
 class Track:
 
     def __init__(self,):
         self.config_content = read_yaml()
         self.cpt_1 = CenterPointTracker()
-        self.all_rect_points = [(77,78,236,292),(240,79,399,293),(405,79,591,292)]
+        self.all_rect_points = [(77,78,236,292),(240,79,399,293),(405,79,570,292)]
         self.rect_color = {1: (173, 255, 230), 0: (144, 255, 144)}
         # self.rect_colors = {1:(0, 255, 0),0: (0, 0, 255)}
         self.solid_rect_colors = {1:(0, 255, 0),0: (0, 0, 255)}
@@ -27,20 +37,22 @@ class Track:
             cv2.putText(frame,f"Zone {str(idx)}",(x1,y1-10),cv2.FONT_HERSHEY_SIMPLEX,0.4,(255,0,0),1)
         return frame
 
-    def input_video_display(self,input_file_path:str,input_display_file_path:str,if_frame = False):
+    def input_video_display(self,input_file_path:str,input_zone,input_display_file_path:str,if_frame = False):
         
         cap = cv2.VideoCapture(input_file_path)
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-        writer = cv2.VideoWriter(input_display_file_path,fourcc,30,
+        writer = cv2.VideoWriter(input_zone,fourcc,30,
                                 (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
                                 int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))))
         print(f"FC {int(cap.get(cv2.CAP_PROP_FRAME_COUNT))}")
-        for i in range(int(cap.get(cv2.CAP_PROP_FRAME_COUNT))):
+        for i in range(int(cap.get(cv2.CAP_PROP_FRAME_COUNT))-15):
             suc,frame = cap.read()
             frame = self._helper_zone_darw(frame)
             writer.write(frame)
         writer.release()
         cap.release()
+
+        convert_video(input_zone,input_display_file_path)
 
     def writer(self,input_file_path:str, output_file_path:str,user_prediction:int):
         self.win_txt = []

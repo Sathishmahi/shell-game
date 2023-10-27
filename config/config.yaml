@@ -5,6 +5,7 @@ ai_vs_human:
   root_dir: ai_vs_human
   input_video_file_name: input.mp4
   input_dis_video_file_name: input_dis.mp4
+  input_zone_video_file_name: input_zone.mp4
   output_dis_video_file_name: output_dis.mp4
   output_video_file_name: output.mp4
   glass_model_drive_id: 10fJJfWaV4zTm9aaWAcHJhNk8M67eYfCM
